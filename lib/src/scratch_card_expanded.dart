@@ -53,6 +53,14 @@ class _ScratchCardExpandedPageState<T>
   /// it doesn't pop in at the route's current opacity.
   late final AnimationController _backdropFade;
 
+  /// Whether the snapshot covers the whole screen at full opacity, as of
+  /// the last build.
+  bool _snapshotFits = false;
+
+  /// Whether this route currently tells the overlay to skip painting the
+  /// page below. See [_syncCoverBelow].
+  bool _coveringBelow = false;
+
   /// Resolution of the captured backdrop relative to the screen. The blur
   /// hides the lost detail, and a quarter-size image is 16× cheaper to blur.
   static const double _backdropScale = 0.25;
@@ -131,8 +139,34 @@ class _ScratchCardExpandedPageState<T>
     _backdropFade = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 220),
-    );
+    )..addStatusListener(_onCoverInputsChanged);
+    widget.routeAnimation.addStatusListener(_onCoverInputsChanged);
     if (config.style.scrimBlurSigma > 0) _captureBackdrop();
+  }
+
+  void _onCoverInputsChanged(AnimationStatus _) => _syncCoverBelow();
+
+  /// Once the card is fully open and the blurred snapshot is fully opaque,
+  /// the page underneath is invisible, yet it would still be painted every
+  /// frame (every scratch move, every confetti frame). Marking this route
+  /// as covering lets the overlay skip it entirely. As soon as closing
+  /// starts, the page is painted again so the close animation reveals it.
+  void _syncCoverBelow() {
+    if (!mounted) return;
+    final route = host._route;
+    final hostRoute = host._hostRoute;
+    final want = route != null &&
+        _snapshotFits &&
+        widget.routeAnimation.status == AnimationStatus.completed &&
+        _backdropFade.status == AnimationStatus.completed &&
+        // A route that doesn't keep its state would be disposed while
+        // covered, taking the collapsed card (this view's host) with it.
+        hostRoute != null &&
+        hostRoute.opaque &&
+        hostRoute.maintainState;
+    if (want == _coveringBelow) return;
+    _coveringBelow = want;
+    route?.setCoversBelow(want);
   }
 
   /// Snapshots the host's page and blurs it once.
@@ -201,6 +235,7 @@ class _ScratchCardExpandedPageState<T>
 
   @override
   void dispose() {
+    widget.routeAnimation.removeStatusListener(_onCoverInputsChanged);
     host._reward.removeListener(_onRewardChanged);
     host._onExpandedDisposed(this);
     _coverController.dispose();
@@ -495,6 +530,11 @@ class _ScratchCardExpandedPageState<T>
         backdropSize != null &&
         (backdropSize.width - screen.width).abs() < 1 &&
         (backdropSize.height - screen.height).abs() < 1;
+    if (snapshotFits != _snapshotFits) {
+      _snapshotFits = snapshotFits;
+      // Changing overlay opacity rebuilds the overlay, so not during build.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncCoverBelow());
+    }
     if (snapshotFits) {
       // The pre-blurred page fades in over the sharp one. RawImage applies
       // the opacity in its own draw call, so no extra layer is created.
@@ -636,25 +676,64 @@ class _ScratchCardExpandedPageState<T>
 }
 
 /// A finger icon swiping back and forth over the cover.
-class _ScratchHint extends AnimatedWidget {
-  const _ScratchHint({required Animation<double> animation})
-      : super(listenable: animation);
+///
+/// The icon and its blurred shadow are rasterized once; each frame only
+/// moves that image with a paint-only translation (no layout, no re-blur).
+class _ScratchHint extends StatelessWidget {
+  const _ScratchHint({required this.animation});
 
-  Animation<double> get _animation => listenable as Animation<double>;
+  final Animation<double> animation;
+
+  static const double _iconSize = 44;
+
+  /// Room around the icon so the shadow blur isn't clipped by the snapshot.
+  static const double _box = _iconSize + 32;
+
+  static final SnapshotController _snapshotOn =
+      SnapshotController(allowSnapshotting: true);
 
   @override
   Widget build(BuildContext context) {
-    final v = _animation.value;
-    final x = math.sin(v * 2 * math.pi) * 0.45;
-    final y = 0.62 + math.cos(v * 4 * math.pi) * 0.05;
-    return Align(
-      alignment: Alignment(x, y),
-      child: const Icon(
-        Icons.touch_app_rounded,
-        size: 44,
-        color: Colors.white,
-        shadows: [Shadow(blurRadius: 10, color: Color(0x55000000))],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        return Align(
+          alignment: Alignment.topLeft,
+          child: AnimatedBuilder(
+            animation: animation,
+            child: SnapshotWidget(
+              controller: _snapshotOn,
+              mode: SnapshotMode.permissive,
+              child: const SizedBox.square(
+                dimension: _box,
+                child: Center(
+                  child: Icon(
+                    Icons.touch_app_rounded,
+                    size: _iconSize,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(blurRadius: 10, color: Color(0x55000000)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            builder: (context, child) {
+              final v = animation.value;
+              // Same path as Align(Alignment(x, y)) on the 44px icon.
+              final x = math.sin(v * 2 * math.pi) * 0.45;
+              final y = 0.62 + math.cos(v * 4 * math.pi) * 0.05;
+              final cx = (x + 1) / 2 * (size.width - _iconSize) + _iconSize / 2;
+              final cy =
+                  (y + 1) / 2 * (size.height - _iconSize) + _iconSize / 2;
+              return Transform.translate(
+                offset: Offset(cx - _box / 2, cy - _box / 2),
+                child: child,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

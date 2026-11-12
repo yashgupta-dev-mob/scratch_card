@@ -16,4 +16,16 @@ class _ScratchCardRoute<T> extends PageRouteBuilder<void> {
             routeAnimation: animation,
           ),
         );
+
+  /// Marks the page entry as covering everything below it, so the overlay
+  /// stops painting the routes underneath (they stay alive and laid out,
+  /// because they keep their state).
+  ///
+  /// Only valid while the expanded view paints a fully opaque backdrop. Must
+  /// not be called during build: the overlay rebuilds in response.
+  void setCoversBelow(bool value) {
+    if (overlayEntries.isEmpty) return;
+    final page = overlayEntries.last;
+    if (page.opaque != value) page.opaque = value;
+  }
 }
