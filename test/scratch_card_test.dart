@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scratch_card/scratch_card.dart';
+import 'package:scratch_card_plus/scratch_card_plus.dart';
 
 const _cardKey = Key('card');
 

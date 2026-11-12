@@ -1,4 +1,4 @@
-# scratch_card: Developer Guide
+# scratch_card_plus: Developer Guide
 
 A reward scratch card for Flutter. The user taps a card, it flies to full screen, they scratch a little, the rest of the cover clears itself, the reward pops in and a celebration plays. Every stage is reported through a callback, so you know exactly when to claim the reward.
 
@@ -111,7 +111,7 @@ The package is local, so add it as a path dependency in your app's `pubspec.yaml
 dependencies:
   flutter:
     sdk: flutter
-  scratch_card:
+  scratch_card_plus:
     path: ../scratch_card   # path relative to your app's folder
 ```
 
@@ -124,7 +124,7 @@ flutter pub get
 And import it:
 
 ```dart
-import 'package:scratch_card/scratch_card.dart';
+import 'package:scratch_card_plus/scratch_card_plus.dart';
 ```
 
 > After adding the dependency, do a **hot restart** (or a full run). Hot reload doesn't pick up new packages.

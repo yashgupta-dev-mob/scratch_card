@@ -1,4 +1,4 @@
-# scratch_card
+# scratch_card_plus
 
 A reward scratch card for Flutter. Tap the card and it flies to full screen. Scratch a little and the rest of the cover clears by itself, the reward pops in and confetti plays. Every stage is reported through a callback.
 
@@ -17,10 +17,16 @@ Built with the Flutter SDK only. It has no third-party dependencies.
 - **Controller:** `open()`, `reveal()`, `close()` and `reset()`.
 - **Accessibility:** semantics labels, a screen-reader "Reveal reward" action, reduced-motion support and haptics.
 
+## Install
+
+```sh
+flutter pub add scratch_card_plus
+```
+
 ## Quick start
 
 ```dart
-import 'package:scratch_card/scratch_card.dart';
+import 'package:scratch_card_plus/scratch_card_plus.dart';
 
 ScratchCard(
   rewardChild: (context) => const Text('₹50 Cashback'),

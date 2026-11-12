@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:scratch_card/scratch_card.dart';
+import 'package:scratch_card_plus/scratch_card_plus.dart';
 
 void main() => runApp(const ScratchCardDemoApp());
 

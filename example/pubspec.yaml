@@ -1,5 +1,5 @@
 name: scratch_card_example
-description: "Demo app for the scratch_card package."
+description: "Demo app for the scratch_card_plus package."
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  scratch_card:
+  scratch_card_plus:
     path: ../
 
 dev_dependencies:

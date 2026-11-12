@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scratch_card/scratch_card.dart';
+import 'package:scratch_card_plus/scratch_card_plus.dart';
 
 void main() {
   group('ScratchProgressTracker', () {
